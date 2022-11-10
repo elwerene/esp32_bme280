@@ -9,14 +9,15 @@ mod sessions;
 use anyhow::Result;
 use std::time::Duration;
 
-const READ_TEMPERATURE_WAIT: Duration = Duration::from_secs(10);
+const READ_TEMPERATURE_WAIT: Duration = Duration::from_secs(60);
 
 fn main() {
     esp_idf_sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
     if let Err(err) = start() {
-        panic!("Error: {err:?}");
+        log::error!("Error: {err:?}");
+        panic!("restart");
     }
 }
 
@@ -25,7 +26,7 @@ fn start() -> Result<()> {
     let mut hardware = hardware::Hardware::setup()?;
     ntp::sync(Duration::from_secs(10))?;
     sessions::init()?;
-    httpd::Httpd::setup()?;
+    let _httpd = httpd::Httpd::setup()?;
 
     log::info!("Starting main loop");
     loop {

@@ -31,6 +31,19 @@ impl Hardware {
         let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
         let default_nvs = Arc::new(EspDefaultNvs::new()?);
 
+        let i2c = peripherals.i2c0;
+        let sda = pins.gpio13.into_input_output()?.degrade();
+        let scl = pins.gpio16.into_input_output()?.degrade();
+        let config = MasterConfig::new().baudrate(100.kHz().into());
+        let i2c = Master::new(i2c, MasterPins { sda, scl }, config)?;
+        let mut bme280 = Bme280::new(i2c, esp_idf_hal::delay::FreeRtos);
+        bme280.init()?;
+        bme280.set_sampling_configuration(
+            Configuration::default()
+                .with_temperature_oversampling(Oversampling::Oversample1)
+                .with_sensor_mode(SensorMode::Normal),
+        )?;
+
         let eth = ethernet::Ethernet::setup(
             netif_stack.clone(),
             sys_loop_stack.clone(),
@@ -51,19 +64,6 @@ impl Hardware {
             error!("Could not setup Ethernet: {err:?}");
             err
         })?;
-
-        let i2c = peripherals.i2c0;
-        let sda = pins.gpio5.into_input_output()?.degrade();
-        let scl = pins.gpio6.into_input_output()?.degrade();
-        let config = MasterConfig::new().baudrate(100.kHz().into());
-        let i2c = Master::new(i2c, MasterPins { sda, scl }, config)?;
-        let mut bme280 = Bme280::new(i2c, esp_idf_hal::delay::FreeRtos);
-        bme280.init()?;
-        bme280.set_sampling_configuration(
-            Configuration::default()
-                .with_temperature_oversampling(Oversampling::Oversample1)
-                .with_sensor_mode(SensorMode::Normal),
-        )?;
 
         info!("Hardware successfully setup!");
 

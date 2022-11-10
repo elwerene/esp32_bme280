@@ -19,9 +19,7 @@ struct Sessions {}
 
 impl<R: Request, S: Response> Handler<R, S> for Sessions {
     fn handle(&self, req: R, resp: S) -> HandlerResult {
-        dbg!(req.query_string());
-
-        let sessions = crate::sessions::sessions(false)?;
+        let sessions = crate::sessions::sessions(req.query_string() == "delete")?;
         serde_json::to_writer(EmbeddedIoWriter(resp.into_writer()?), &sessions)?;
 
         Ok(())
