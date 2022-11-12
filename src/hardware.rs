@@ -78,10 +78,14 @@ impl Hardware {
     }
 
     pub fn read_temperature(&mut self) -> Result<u8> {
-        Ok(self
+        let temperature = self
             .bme280
             .read_temperature()?
             .ok_or_else(|| anyhow::format_err!("Could not read temperature"))?
-            .round() as u8)
+            .round() as u8;
+
+        log::info!("Tempterature: {temperature}");
+
+        Ok(temperature)
     }
 }
